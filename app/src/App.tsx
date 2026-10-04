@@ -59,12 +59,15 @@ export default function App() {
                 type="button"
                 onClick={() => setView(v)}
                 aria-current={view === v ? 'page' : undefined}
+                aria-label={label}
+                title={label}
                 className={`display flex items-center gap-1.5 whitespace-nowrap border-b-2 px-2 pb-1.5 pt-1 text-[12.5px] tracking-label transition-colors ${
                   view === v ? 'border-amber text-fg' : 'border-transparent text-faint hover:text-dim'
                 }`}
               >
                 <Icon size={13} />
-                {label}
+                {/* Phones get icons only; three labels crowd out the search button. */}
+                <span className="hidden sm:inline">{label}</span>
               </button>
             ))}
           </nav>

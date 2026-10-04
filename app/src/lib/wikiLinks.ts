@@ -143,7 +143,9 @@ function createParser(fromPath: string): Marked {
           const words = slug.replace(/-/g, ' ')
           // `[[wiki-layer]]` sits mid-sentence, so keep it lowercase when the
           // title says the same thing; otherwise the title reads better.
-          const text = esc(label ?? (page && page.title.toLowerCase() !== words ? page.title : words))
+          // Compare without hyphens so pre-commit-hook still matches "Pre-commit hook".
+          const plain = page?.title.toLowerCase()
+          const text = esc(label ?? (page && plain!.replace(/-/g, ' ') !== words ? page.title : plain ?? words))
           return page
             ? pageLink(slug, text)
             : `<span class="deadlink" title="No wiki page: ${esc(slug)}">${text}</span>`

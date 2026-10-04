@@ -2,6 +2,13 @@
 
 Newest first. Never edit an old entry. Heading shape: `## [YYYY-MM-DD] kind | title`.
 
+## [2026-10-04] feat | Article stats, collapsible sidebar, phone header
+
+- Updated: systems/reader-app.md
+- Stats count prose only, the same view of the text the linter takes
+- Phone header shows nav icons only; the third tab had crowded the search button
+- A bare wikilink to a hyphenated title stays lowercase mid-sentence
+
 ## [2026-10-04] feat | Decks: shell, intro deck and catalog in the reader
 
 - Created: systems/decks.md

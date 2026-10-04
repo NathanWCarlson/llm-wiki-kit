@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUp, ArrowUpRight, ChevronRight, Network, Presentation, Search } from 'lucide-react'
-import { edgeLabel, FOLDERS, graph, home, INVERSE_OF, pagesInFolder } from '../lib/wiki'
+import { articleStats, edgeLabel, FOLDERS, graph, home, INVERSE_OF, pagesInFolder, type ArticleStats } from '../lib/wiki'
 import { STATUS_COLOR } from '../lib/theme'
 import { useAppStore } from '../store/useAppStore'
 import { CitePopover, Markdown, type CiteAnchor } from '../components/Markdown'
@@ -21,6 +21,7 @@ export function ReaderView() {
   const body = withoutTitle(page ? page.body : home.body)
   const sections = useMemo(() => sectionsOf(body), [body])
   const pageKey = page?.slug ?? 'home'
+  const stats = useMemo(() => articleStats(body, page?.slug), [body, page?.slug])
 
   return (
     <div className="rise grid grid-cols-1 gap-5 lg:grid-cols-[210px_minmax(0,1fr)_250px]">
@@ -35,11 +36,9 @@ export function ReaderView() {
                 <span className="font-mono text-chrome text-faint">verified {page.lastVerified}</span>
               )}
               <span className="ml-auto break-all font-mono text-chrome text-faint">{page.path}</span>
-              {sections.length >= 3 && <SectionsMenu items={sections} pageKey={pageKey} />}
             </div>
-            <h1 className="display mb-5 border-b border-edge pb-4 text-[1.85rem] leading-[1.15] text-fg [overflow-wrap:anywhere]">
-              {page.title}
-            </h1>
+            <h1 className="display mb-2.5 text-[1.85rem] leading-[1.15] text-fg [overflow-wrap:anywhere]">{page.title}</h1>
+            <StatsRow stats={stats} sections={sections} pageKey={pageKey} />
             {page.type === 'question' && <QuestionPanel page={page} openPage={openPage} />}
             <Markdown md={body} path={page.path} onNavigate={openPage} />
           </>
@@ -48,11 +47,9 @@ export function ReaderView() {
             <div className="mb-3 flex flex-wrap items-center gap-3">
               <Legend>Home</Legend>
               <span className="ml-auto font-mono text-chrome text-faint">{home.path}</span>
-              {sections.length >= 3 && <SectionsMenu items={sections} pageKey={pageKey} />}
             </div>
-            <h1 className="display mb-5 border-b border-edge pb-4 text-[1.85rem] leading-[1.15] text-fg">
-              {home.title}
-            </h1>
+            <h1 className="display mb-2.5 text-[1.85rem] leading-[1.15] text-fg">{home.title}</h1>
+            <StatsRow stats={stats} sections={sections} pageKey={pageKey} />
             <Markdown md={body} path={home.path} onNavigate={openPage} />
           </>
         )}
@@ -64,6 +61,38 @@ export function ReaderView() {
         </aside>
       )}
       <BackToTop pageKey={pageKey} />
+    </div>
+  )
+}
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+
+/** Size and connectedness at a glance, under the title; the Sections menu sits at its end. */
+function StatsRow({ stats, sections, pageKey }: { stats: ArticleStats; sections: Section[]; pageKey: string }) {
+  const parts: [string, string][] = [
+    [plural(stats.words, 'word'), 'Words in the prose, code excluded'],
+    [`~${stats.minutes} min`, 'At about 220 words a minute'],
+  ]
+  if (sections.length) parts.push([plural(sections.length, 'section'), 'H2 sections'])
+  if (pageKey !== 'home') {
+    parts.push([plural(stats.edges, 'edge'), 'Typed edges this page declares'])
+    if (stats.backlinks) parts.push([plural(stats.backlinks, 'backlink'), 'Pages that point here by edge or wikilink'])
+  }
+  return (
+    <div className="mb-5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 border-b border-edge pb-3">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-chrome tabular-nums text-faint">
+        {parts.map(([text, title], i) => (
+          <span key={title} className="contents">
+            {i > 0 && (
+              <span aria-hidden className="text-edge">
+                ·
+              </span>
+            )}
+            <span title={title}>{text}</span>
+          </span>
+        ))}
+      </div>
+      {sections.length >= 3 && <SectionsMenu items={sections} pageKey={pageKey} />}
     </div>
   )
 }
@@ -181,6 +210,17 @@ function PageList({ current, openPage }: { current?: string; openPage: (slug: st
   const q = filter.trim().toLowerCase()
   const total = Object.keys(graph.pages).length
 
+  // Accordion: one folder open at a time, starting with the open page's folder.
+  // Opening another page re-opens its folder; resetting during render avoids an
+  // effect round-trip.
+  const activeFolder = current ? graph.pages[current]?.folder ?? null : null
+  const [openFolder, setOpenFolder] = useState<string | null>(activeFolder)
+  const [lastActive, setLastActive] = useState(activeFolder)
+  if (lastActive !== activeFolder) {
+    setLastActive(activeFolder)
+    setOpenFolder(activeFolder)
+  }
+
   return (
     <aside className="min-w-0 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:pr-1">
       <button
@@ -219,13 +259,28 @@ function PageList({ current, openPage }: { current?: string; openPage: (slug: st
             (p) => !q || p.title.toLowerCase().includes(q) || p.slug.includes(q),
           )
           if (!pages.length) return null
+          // While filtering, every folder with a match shows its matches.
+          const expanded = q ? true : openFolder === folder
           return (
-            <div key={folder} className="mb-3">
-              <div className="legend mb-1 px-1">
-                <span className="flex-1">{folder}</span>
+            <div key={folder} className="mb-1.5">
+              <button
+                type="button"
+                onClick={() => setOpenFolder((f) => (f === folder ? null : folder))}
+                aria-expanded={expanded}
+                disabled={Boolean(q)}
+                className={`legend w-full rounded-[3px] px-1 py-1 transition-colors hover:text-fg disabled:cursor-default ${
+                  folder === activeFolder ? 'text-fg' : ''
+                }`}
+              >
+                <span className="flex-1 text-left">{folder}</span>
                 <span className="font-mono text-label tracking-normal">{pages.length}</span>
-              </div>
-              {pages.map((p) => (
+                <ChevronRight
+                  size={11}
+                  strokeWidth={2.5}
+                  className={`shrink-0 text-faint transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
+                />
+              </button>
+              {expanded && pages.map((p) => (
                 <button
                   key={p.slug}
                   type="button"

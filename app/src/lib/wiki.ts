@@ -220,3 +220,29 @@ export function stripLinks(s: string): string {
 export function edgeLabel(key: EdgeKey): string {
   return key.replace(/-/g, ' ')
 }
+
+export interface ArticleStats {
+  words: number
+  minutes: number
+  /** outbound edge targets that resolve to a page */
+  edges: number
+  /** distinct pages that point here by edge or wikilink */
+  backlinks: number
+}
+
+/** Counts read from the prose only; code blocks and inline code are not words. */
+export function articleStats(body: string, slug?: string): ArticleStats {
+  const plain = proseOnly(body)
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[\[([^\]|\\]+)(?:\\?\|([^\]]+))?\]\]/g, (_, s: string, label?: string) => label ?? s.replace(/-/g, ' '))
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[*_>|#-]+/g, ' ')
+  const words = plain.split(/\s+/).filter((w) => /\w/.test(w)).length
+  const page = slug ? graph.pages[slug] : undefined
+  return {
+    words,
+    minutes: Math.max(1, Math.round(words / 220)),
+    edges: page ? Object.values(page.edges).flat().filter((t) => graph.pages[t]).length : 0,
+    backlinks: page ? new Set((graph.inbound[page.slug] ?? []).map((b) => b.from)).size : 0,
+  }
+}

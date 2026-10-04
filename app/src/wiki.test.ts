@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { RAW_META } from 'virtual:raw-meta'
 import { citedBy, classifyHref, renderMarkdown, sectionsOf } from './lib/wikiLinks'
-import { graph, home, parsePage, schema } from './lib/wiki'
+import { articleStats, graph, home, parsePage, schema } from './lib/wiki'
 import { searchPages } from './lib/search'
 import { decks, parseDeck } from './lib/decks'
 import { lastLoggedBySlug } from './lib/log'
@@ -118,6 +118,12 @@ describe('rendering', () => {
     expect(sectionsOf('## A\n\n## A\n').map((s) => s.id)).toEqual(['sec-a', 'sec-a-2'])
   })
 
+  it('keeps a bare [[slug]] lowercase mid-sentence when the title says the same words', () => {
+    const html = renderMarkdown('The [[pre-commit-hook]] and [[q-scale-ceiling]].', 'wiki/systems/x.md')
+    expect(html).toContain('>pre-commit hook</a>')
+    expect(html).toContain(`>${graph.pages['q-scale-ceiling'].title}</a>`)
+  })
+
   it('keeps [[examples]] inside code literal', () => {
     const el = dom(renderMarkdown('Prose `[[not-a-link]]` here.', 'wiki/concepts/x.md'))
     expect(el.querySelector('code')?.textContent).toBe('[[not-a-link]]')
@@ -213,5 +219,21 @@ describe('decks', () => {
       `---\nslug: x\ntitle: X\nstatus: ready\nupdated: ${updated}\nsources:\n  - canon-map\n---\n`
     expect(parseDeck('x', md('2000-01-01'))!.staleSources).toEqual(['canon-map'])
     expect(parseDeck('x', md('2999-01-01'))!.staleSources).toEqual([])
+  })
+})
+
+describe('article stats', () => {
+  it('counts prose words, not code, link syntax or markup', () => {
+    const md = '## Heading here\n\nSee [[typed-edges|the edges]] and [a source](../../raw/x.md).\n\n```\nconst skipped = true\n```\n\nInline `ignored code` stays out. - item\n'
+    // heading here, see, the edges, and, a source, inline, stays out, item
+    expect(articleStats(md).words).toBe(12)
+  })
+
+  it('counts resolved edges and distinct pages pointing in', () => {
+    const page = graph.pages['canon-map']
+    const stats = articleStats(page.body, page.slug)
+    expect(stats.edges).toBe(Object.values(page.edges).flat().length)
+    expect(stats.backlinks).toBe(new Set((graph.inbound['canon-map'] ?? []).map((b) => b.from)).size)
+    expect(stats.backlinks).toBeGreaterThan(0)
   })
 })
