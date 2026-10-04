@@ -34,3 +34,7 @@ Open the repo in Claude Code (or Copilot, Cursor, Codex) and say "add this to th
 | `app/` | Reader with search and graph |
 | `docs/` | Guide, hygiene standard, design brief |
 | `references/` | Page templates |
+
+## License
+
+[MIT](LICENSE)
