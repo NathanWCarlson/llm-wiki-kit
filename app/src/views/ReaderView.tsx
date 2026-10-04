@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
-import { ArrowUpRight, ChevronRight, Network, Search } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowUp, ArrowUpRight, ChevronRight, Network, Search } from 'lucide-react'
 import { edgeLabel, FOLDERS, graph, home, INVERSE_OF, pagesInFolder } from '../lib/wiki'
 import { STATUS_COLOR } from '../lib/theme'
 import { useAppStore } from '../store/useAppStore'
 import { CitePopover, Markdown, type CiteAnchor } from '../components/Markdown'
+import { sectionsOf, type Section } from '../lib/wikiLinks'
 import { Legend, Panel, TypeBadge } from '../components/ui'
 import type { WikiPage } from '../types/wiki'
 
@@ -16,12 +17,15 @@ export function ReaderView() {
   const selected = useAppStore((s) => s.selected)
   const openPage = useAppStore((s) => s.openPage)
   const page = selected ? graph.pages[selected] : undefined
+  const body = withoutTitle(page ? page.body : home.body)
+  const sections = useMemo(() => sectionsOf(body), [body])
+  const pageKey = page?.slug ?? 'home'
 
   return (
     <div className="rise grid grid-cols-1 gap-5 lg:grid-cols-[210px_minmax(0,1fr)_250px]">
       <PageList current={page?.slug} openPage={openPage} />
 
-      <Panel className={`min-w-0 px-4 py-5 sm:px-7 sm:py-6 ${page ? '' : 'lg:col-span-2'}`}>
+      <Panel id="article-top" className={`min-w-0 scroll-mt-20 px-4 py-5 sm:px-7 sm:py-6 ${page ? '' : 'lg:col-span-2'}`}>
         {page ? (
           <>
             <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
@@ -30,23 +34,25 @@ export function ReaderView() {
                 <span className="font-mono text-chrome text-faint">verified {page.lastVerified}</span>
               )}
               <span className="ml-auto break-all font-mono text-chrome text-faint">{page.path}</span>
+              {sections.length >= 3 && <SectionsMenu items={sections} pageKey={pageKey} />}
             </div>
             <h1 className="display mb-5 border-b border-edge pb-4 text-[1.85rem] leading-[1.15] text-fg [overflow-wrap:anywhere]">
               {page.title}
             </h1>
             {page.type === 'question' && <QuestionPanel page={page} openPage={openPage} />}
-            <Markdown md={withoutTitle(page.body)} path={page.path} onNavigate={openPage} />
+            <Markdown md={body} path={page.path} onNavigate={openPage} />
           </>
         ) : (
           <>
             <div className="mb-3 flex flex-wrap items-center gap-3">
               <Legend>Home</Legend>
               <span className="ml-auto font-mono text-chrome text-faint">{home.path}</span>
+              {sections.length >= 3 && <SectionsMenu items={sections} pageKey={pageKey} />}
             </div>
             <h1 className="display mb-5 border-b border-edge pb-4 text-[1.85rem] leading-[1.15] text-fg">
               {home.title}
             </h1>
-            <Markdown md={withoutTitle(home.body)} path={home.path} onNavigate={openPage} />
+            <Markdown md={body} path={home.path} onNavigate={openPage} />
           </>
         )}
       </Panel>
@@ -56,7 +62,113 @@ export function ReaderView() {
           <ConnectionsPanel page={page} openPage={openPage} />
         </aside>
       )}
+      <BackToTop pageKey={pageKey} />
     </div>
+  )
+}
+
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+/** Jump-to list in the meta strip, beside the path and never over the title. */
+function SectionsMenu({ items, pageKey }: { items: Section[]; pageKey: string }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  // A new page closes the menu. Resetting during render avoids an effect round-trip.
+  const [lastKey, setLastKey] = useState(pageKey)
+  if (lastKey !== pageKey) {
+    setLastKey(pageKey)
+    setOpen(false)
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('pointerdown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const go = (id: string) => {
+    scrollToId(id)
+    setOpen(false)
+  }
+
+  return (
+    <div ref={rootRef} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        title={open ? 'Hide section list' : 'Jump to section'}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 rounded border border-edge bg-console px-2 py-1 font-mono text-chrome uppercase tracking-label text-dim transition-colors hover:border-amber hover:text-amber"
+      >
+        <ChevronRight size={11} strokeWidth={2.5} className={`text-faint transition-transform ${open ? 'rotate-90' : ''}`} />
+        Sections
+        <span className="tabular-nums text-faint">{items.length}</span>
+      </button>
+      {open && (
+        <ul className="absolute right-0 top-full z-30 mt-1 max-h-[min(60vh,24rem)] w-56 overflow-y-auto rounded border border-edge bg-void py-1.5 shadow-md">
+          <li>
+            <button
+              type="button"
+              onClick={() => go('article-top')}
+              className="flex w-full items-center gap-1.5 px-2.5 py-1.5 font-mono text-data text-dim transition-colors hover:bg-console hover:text-amber"
+            >
+              <ArrowUp size={11} className="text-faint" />
+              Top
+            </button>
+          </li>
+          {items.map((item) => (
+            <li key={item.id}>
+              <button
+                type="button"
+                title={item.label}
+                onClick={() => go(item.id)}
+                className="block w-full truncate px-2.5 py-1.5 font-mono text-data text-dim transition-colors hover:bg-console hover:text-amber"
+              >
+                {item.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+/** Bottom-right return control, shown once the article header has scrolled away. */
+function BackToTop({ pageKey }: { pageKey: string }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 320)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [pageKey])
+
+  if (!visible) return null
+  return (
+    <button
+      type="button"
+      onClick={() => scrollToId('article-top')}
+      title="Back to the top of the page"
+      className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-1.5 rounded border border-edge bg-void/95 px-3 py-2 font-mono text-data uppercase tracking-label text-dim shadow-md backdrop-blur-sm transition-colors hover:border-amber hover:text-amber sm:bottom-6 sm:right-6"
+    >
+      <ArrowUp size={14} strokeWidth={2.25} className="text-amber" />
+      Top
+    </button>
   )
 }
 

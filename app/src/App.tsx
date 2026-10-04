@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BookOpen, Moon, Network, Sun } from 'lucide-react'
+import { BookOpen, Moon, Network, Sun, ZoomIn } from 'lucide-react'
 import { useAppStore, type PrimaryView } from './store/useAppStore'
 import { graph } from './lib/wiki'
 import { CommandPalette } from './components/CommandPalette'
@@ -17,12 +17,20 @@ export default function App() {
   const theme = useAppStore((s) => s.theme)
   const setView = useAppStore((s) => s.setView)
   const toggleTheme = useAppStore((s) => s.toggleTheme)
+  const uiScale = useAppStore((s) => s.uiScale)
+  const cycleScale = useAppStore((s) => s.cycleScale)
   const goHome = useAppStore((s) => s.goHome)
   const pageCount = Object.keys(graph.pages).length
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
+
+  // Presentation scale: CSS zoom on the root so everything grows together for a
+  // projector or screen share, layout included.
+  useEffect(() => {
+    document.documentElement.style.zoom = uiScale === 1 ? '' : String(uiScale)
+  }, [uiScale])
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -60,6 +68,18 @@ export default function App() {
           </nav>
           <div className="flex shrink-0 items-center gap-2">
             <CommandPalette />
+            <button
+              type="button"
+              onClick={cycleScale}
+              title={`Presentation scale ${uiScale}x. Click to cycle.`}
+              aria-label={`Presentation scale ${uiScale}x`}
+              className={`flex items-center gap-1 rounded border p-1.5 font-mono text-chrome tabular-nums transition-colors hover:text-amber ${
+                uiScale === 1 ? 'border-edge text-faint' : 'border-amber text-amber'
+              }`}
+            >
+              <ZoomIn size={14} />
+              {uiScale !== 1 && <span>{uiScale}x</span>}
+            </button>
             <button
               type="button"
               onClick={toggleTheme}

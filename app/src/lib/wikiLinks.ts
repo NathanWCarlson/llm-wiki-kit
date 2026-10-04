@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify'
-import { Marked, type Tokens } from 'marked'
+import { Lexer, Marked, type Tokens } from 'marked'
 import { graph, proseOnly } from './wiki'
 
 export type LinkTarget =
@@ -78,6 +78,44 @@ function renderLink(fromPath: string, href: string, label: string): string {
   }
 }
 
+export interface Section {
+  id: string
+  label: string
+}
+
+const stripFrontmatter = (md: string) => md.replace(/^---\n[\s\S]*?\n---\n/, '')
+
+/** Heading text as a reader sees it: link syntax and emphasis removed. */
+function headingLabel(text: string): string {
+  return text
+    .replace(/\[\[([^\]|\\]+)(?:\\?\|([^\]]+))?\]\]/g, (_, slug: string, label?: string) => label ?? slug.replace(/-/g, ' '))
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/[`*_]/g, '')
+    .trim()
+}
+
+/**
+ * The page's H2s, in order, with the ids the renderer gives them. Both come from
+ * here so the Sections menu and the anchors cannot disagree. Ids carry a prefix
+ * so a heading can never shadow a DOM property (DOMPurify strips those).
+ */
+export function sectionsOf(md: string): Section[] {
+  const seen = new Map<string, number>()
+  return new Lexer({ gfm: true })
+    .lex(stripFrontmatter(md))
+    .filter((t): t is Tokens.Heading => t.type === 'heading' && t.depth === 2)
+    .map((t) => {
+      const label = headingLabel(t.text)
+      const base = `sec-${label.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 60)}`
+      const n = seen.get(base) ?? 0
+      seen.set(base, n + 1)
+      return { id: n ? `${base}-${n + 1}` : base, label }
+    })
+}
+
+// Ids for the H2s of the render in progress, consumed in order by the heading renderer.
+let pendingIds: string[] = []
+
 interface WikilinkToken extends Tokens.Generic {
   type: 'wikilink'
   slug: string
@@ -113,6 +151,10 @@ function createParser(fromPath: string): Marked {
       },
     ],
     renderer: {
+      heading({ tokens, depth }) {
+        const id = depth === 2 ? pendingIds.shift() : undefined
+        return `<h${depth}${id ? ` id="${id}"` : ''}>${this.parser.parseInline(tokens)}</h${depth}>\n`
+      },
       link({ href, tokens }) {
         return renderLink(fromPath, href, this.parser.parseInline(tokens))
       },
@@ -127,7 +169,8 @@ export function renderMarkdown(md: string, fromPath: string): string {
   const dir = fromPath.split('/').slice(0, -1).join('/')
   let parser = parsers.get(dir)
   if (!parser) parsers.set(dir, (parser = createParser(fromPath)))
-  const body = md.replace(/^---\n[\s\S]*?\n---\n/, '')
+  const body = stripFrontmatter(md)
+  pendingIds = sectionsOf(body).map((s) => s.id)
   return DOMPurify.sanitize(parser.parse(body, { async: false }), {
     ADD_ATTR: ['data-slug', 'data-raw', 'target'],
   })

@@ -2,6 +2,13 @@
 
 Newest first. Never edit an old entry. Heading shape: `## [YYYY-MM-DD] kind | title`.
 
+## [2026-10-04] feat | Sections menu, back to top, presentation scale, graph zoom
+
+- Updated: systems/reader-app.md
+- Sections menu and heading anchors share one function, so they cannot drift
+- Graph zoom keeps a plain click distinct from the end of a drag
+- Pre-commit markdown lint checks staged files only; it had failed a commit over untracked work in progress
+
 ## [2026-10-04] feat | Reader app with search, graph and citation index
 
 - Added: app/ (reader, graph, command palette, single-file export)

@@ -42,8 +42,10 @@ if printf '%s\n' "$staged" | grep -qE '^(wiki|raw)/' && [ "$WIKI_LINT_OK" != "1"
   fi
 fi
 
-if printf '%s\n' "$staged" | grep -qE '\.md$'; then
-  npx --no-install markdownlint-cli2 || fail=1
+# Only the markdown being committed: untracked work in progress is not this commit's problem.
+md_staged=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.md$')
+if [ -n "$md_staged" ]; then
+  printf '%s\n' "$md_staged" | xargs npx --no-install markdownlint-cli2 --no-globs || fail=1
 fi
 
 exit $fail

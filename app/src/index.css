@@ -238,6 +238,8 @@ a:focus-visible {
   hyphens: auto;
 }
 .wiki-prose h2 {
+  /* clears the sticky header when the Sections menu jumps here */
+  scroll-margin-top: 5rem;
   font-family: var(--font-display);
   font-stretch: var(--stretch-mid);
   font-weight: 550;

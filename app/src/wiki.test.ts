@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { RAW_META } from 'virtual:raw-meta'
-import { citedBy, classifyHref, renderMarkdown } from './lib/wikiLinks'
+import { citedBy, classifyHref, renderMarkdown, sectionsOf } from './lib/wikiLinks'
 import { graph, home, parsePage, schema } from './lib/wiki'
 import { searchPages } from './lib/search'
 
@@ -105,6 +105,15 @@ describe('rendering', () => {
       expect(el.textContent, path).not.toContain('[[')
     }
     expect(links).toBeGreaterThan(0)
+  })
+
+  it('gives every H2 the id its Sections menu entry points at', () => {
+    for (const p of [...pages, { path: home.path, body: home.body }]) {
+      const ids = sectionsOf(p.body).map((s) => s.id)
+      const rendered = [...renderMarkdown(p.body, p.path).matchAll(/<h2 id="([^"]+)"/g)].map((m) => m[1])
+      expect(rendered, p.path).toEqual(ids)
+    }
+    expect(sectionsOf('## A\n\n## A\n').map((s) => s.id)).toEqual(['sec-a', 'sec-a-2'])
   })
 
   it('keeps [[examples]] inside code literal', () => {

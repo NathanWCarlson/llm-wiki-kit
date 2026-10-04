@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { CornerDownRight, MousePointerClick } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { CornerDownRight, Maximize2, MousePointerClick, ZoomIn, ZoomOut } from 'lucide-react'
 import { edgeLabel, graph, stripLinks, TYPES } from '../lib/wiki'
 import { typeColor } from '../lib/theme'
 import { useAppStore } from '../store/useAppStore'
@@ -134,14 +134,131 @@ function visibleLabels(nodes: Node[], near: Set<string> | null, focus: string | 
 }
 
 /** Put the card in the corner away from the node so it never hides the neighbourhood. */
-function cardStyle(x: number, y: number): React.CSSProperties {
+/** fx, fy: the node's position as a fraction of the visible area, so the card
+ * sits in the opposite corner whatever the zoom. */
+function cardStyle(fx: number, fy: number): React.CSSProperties {
   const inset = 12
   return {
     position: 'absolute',
     zIndex: 10,
     width: 'min(22rem, calc(100% - 1.5rem))',
-    ...(x >= W / 2 ? { left: inset } : { right: inset }),
-    ...(y >= H / 2 ? { top: inset } : { bottom: inset }),
+    ...(fx >= 0.5 ? { left: inset } : { right: inset }),
+    ...(fy >= 0.5 ? { top: inset } : { bottom: inset }),
+  }
+}
+
+interface ViewBox {
+  x: number
+  y: number
+  w: number
+}
+
+const FULL: ViewBox = { x: 0, y: 0, w: W }
+const MIN_W = W / 6
+
+/** Zoom around a point given in graph units, keeping that point under the cursor. */
+function zoomAt(vb: ViewBox, factor: number, px: number, py: number): ViewBox {
+  const w = Math.min(W, Math.max(MIN_W, vb.w * factor))
+  const k = w / vb.w
+  return clampView({ x: px - (px - vb.x) * k, y: py - (py - vb.y) * k, w })
+}
+
+/** Keep at least half the view over the graph so it can't be panned away. */
+function clampView(vb: ViewBox): ViewBox {
+  const h = (vb.w * H) / W
+  return {
+    w: vb.w,
+    x: Math.min(W - vb.w / 2, Math.max(-vb.w / 2, vb.x)),
+    y: Math.min(H - h / 2, Math.max(-h / 2, vb.y)),
+  }
+}
+
+/**
+ * Pinch or ⌘/Ctrl+wheel zooms; plain wheel scrolls the page as usual. Dragging
+ * pans. Pointer capture starts only once a drag passes a few pixels, so a plain
+ * click still reaches the node under it; `dragged` lets click handlers ignore
+ * the click that ends a pan.
+ */
+function usePanZoom() {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [vb, setVb] = useState<ViewBox>(FULL)
+  const dragged = useRef(false)
+
+  const toGraph = useCallback((clientX: number, clientY: number, view: ViewBox) => {
+    const r = svgRef.current!.getBoundingClientRect()
+    return { x: view.x + ((clientX - r.left) / r.width) * view.w, y: view.y + ((clientY - r.top) / r.height) * ((view.w * H) / W) }
+  }, [])
+
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      setVb((v) => {
+        const p = toGraph(e.clientX, e.clientY, v)
+        // Mouse wheels send ~100 per notch, trackpads a few: cap one step at ~1.6x.
+        return zoomAt(v, Math.exp(Math.max(-50, Math.min(50, e.deltaY)) * 0.01), p.x, p.y)
+      })
+    }
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    return () => svg.removeEventListener('wheel', onWheel)
+  }, [toGraph])
+
+  const pointers = useRef(new Map<number, { x: number; y: number }>())
+  const start = useRef<{ x: number; y: number; vb: ViewBox; dist: number } | null>(null)
+
+  const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    const pts = [...pointers.current.values()]
+    const mid = pts.reduce((a, p) => ({ x: a.x + p.x / pts.length, y: a.y + p.y / pts.length }), { x: 0, y: 0 })
+    const dist = pts.length > 1 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0
+    start.current = { ...mid, vb, dist }
+    dragged.current = false
+  }
+
+  const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!start.current || !pointers.current.has(e.pointerId)) return
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    const pts = [...pointers.current.values()]
+    const mid = pts.reduce((a, p) => ({ x: a.x + p.x / pts.length, y: a.y + p.y / pts.length }), { x: 0, y: 0 })
+    const s = start.current
+    if (!dragged.current && Math.hypot(mid.x - s.x, mid.y - s.y) < 4 && pts.length < 2) return
+    if (!dragged.current) {
+      dragged.current = true
+      e.currentTarget.setPointerCapture(e.pointerId)
+    }
+    const r = e.currentTarget.getBoundingClientRect()
+    const unit = s.vb.w / r.width
+    let next: ViewBox = { ...s.vb, x: s.vb.x - (mid.x - s.x) * unit, y: s.vb.y - (mid.y - s.y) * unit }
+    if (pts.length > 1 && s.dist > 0) {
+      const p = toGraph(s.x, s.y, s.vb)
+      next = zoomAt(next, s.dist / Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), p.x, p.y)
+    }
+    setVb(clampView(next))
+  }
+
+  const onPointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    pointers.current.delete(e.pointerId)
+    start.current = null
+    if (pointers.current.size) {
+      // One finger left after a pinch: restart the pan from where it is.
+      const [p] = pointers.current.values()
+      start.current = { x: p.x, y: p.y, vb, dist: 0 }
+    }
+  }
+
+  const zoomBy = (factor: number) =>
+    setVb((v) => zoomAt(v, factor, v.x + v.w / 2, v.y + (v.w * H) / W / 2))
+
+  return {
+    svgRef,
+    vb,
+    dragged,
+    handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp },
+    zoomIn: () => zoomBy(1 / 1.4),
+    zoomOut: () => zoomBy(1.4),
+    reset: () => setVb(FULL),
   }
 }
 
@@ -196,6 +313,8 @@ export function GraphView() {
   // "Show on graph" from the reader arrives as graphFocus: hold that node.
   const [held, setHeld] = useState<string | null>(graphFocus)
   const [entered, setEntered] = useState(false)
+  const { svgRef, vb, dragged, handlers, zoomIn, zoomOut, reset } = usePanZoom()
+  const zoom = W / vb.w
 
   const { nodes, edges } = useMemo(() => layout(active), [active])
   const bySlug = useMemo(() => new Map(nodes.map((n) => [n.slug, n])), [nodes])
@@ -252,16 +371,32 @@ export function GraphView() {
           </button>
         ))}
         <span className="ml-auto font-mono text-chrome text-faint">
-          {nodes.length} pages · {edges.length} edges · hover to peek · click to open
+          {nodes.length} pages · {edges.length} edges · click to open · drag to pan · pinch or ⌘-scroll to zoom
         </span>
       </div>
       <Panel className="relative overflow-hidden">
-        {focus && focusNode && <FocusCard slug={focus} x={focusNode.x} y={focusNode.y} />}
+        {focus && focusNode && (
+          <FocusCard slug={focus} x={(focusNode.x - vb.x) / vb.w} y={(focusNode.y - vb.y) / ((vb.w * H) / W)} />
+        )}
+        <div className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1 rounded border border-edge bg-console/95 p-0.5 backdrop-blur">
+          <button type="button" onClick={zoomOut} disabled={vb.w >= W} aria-label="Zoom out" className="rounded p-1.5 text-faint transition-colors hover:text-amber disabled:opacity-30">
+            <ZoomOut size={14} />
+          </button>
+          <span className="w-10 text-center font-mono text-chrome tabular-nums text-faint">{Math.round(zoom * 100)}%</span>
+          <button type="button" onClick={zoomIn} disabled={vb.w <= MIN_W} aria-label="Zoom in" className="rounded p-1.5 text-faint transition-colors hover:text-amber disabled:opacity-30">
+            <ZoomIn size={14} />
+          </button>
+          <button type="button" onClick={reset} disabled={vb === FULL} aria-label="Fit the whole graph" className="rounded p-1.5 text-faint transition-colors hover:text-amber disabled:opacity-30">
+            <Maximize2 size={14} />
+          </button>
+        </div>
         <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className={`graph-canvas block h-auto w-full ${entered ? 'graph-canvas--in' : ''}`}
+          ref={svgRef}
+          viewBox={`${vb.x} ${vb.y} ${vb.w} ${(vb.w * H) / W}`}
+          className={`graph-canvas block h-auto w-full touch-none cursor-grab active:cursor-grabbing ${entered ? 'graph-canvas--in' : ''}`}
+          {...handlers}
           onClick={(e) => {
-            if (e.target === e.currentTarget) setHeld(null)
+            if (!dragged.current && e.target === e.currentTarget) setHeld(null)
           }}
           role="img"
           aria-label="Graph of typed edges between wiki pages"
@@ -312,7 +447,9 @@ export function GraphView() {
                 }}
                 onMouseEnter={() => setHover(n.slug)}
                 onMouseLeave={() => setHover(null)}
-                onClick={() => openPage(n.slug)}
+                onClick={() => {
+                  if (!dragged.current) openPage(n.slug)
+                }}
               >
                 {hot && (
                   <circle r={r + 6} fill="none" stroke={typeColor(n.type)} strokeOpacity={0.35} className="graph-ring" />

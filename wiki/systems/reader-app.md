@@ -20,6 +20,8 @@ last-verified: 2026-10-04
 - Reads `wiki/` at build time. Nothing to deploy beyond static files.
 - Reads [[shared-schema]] for folders and edge keys, so it agrees with the [[wiki-linter]].
 - Citation popovers show a raw file's header lines and every page that cites it. Source bodies never enter the bundle.
+- Long pages get a Sections menu and a back-to-top button. A header control scales the whole UI for screen sharing.
+- The graph zooms and pans: drag, pinch, or ⌘-scroll.
 - `npm run export` writes one self-contained HTML file.
 
 ## Rule
