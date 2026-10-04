@@ -63,6 +63,11 @@ export default defineConfig({
       allow: ['..'],
     },
   },
+  build: {
+    // Built decks are bundled as text so Present works from the single-file
+    // export; each adds ~250 KB to the one chunk on purpose.
+    chunkSizeWarningLimit: 2000,
+  },
   test: {
     environment: 'jsdom',
   },

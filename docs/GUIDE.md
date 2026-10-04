@@ -100,6 +100,12 @@ When the plan changes, rewrite the canon page so its present tense is true today
 
 `AGENTS.md` under about 150 lines. Agents read it every session, and a long one gets skimmed. When it grows, move the narrative into the wiki and leave a link.
 
+## Decks
+
+Sometimes the wiki has to go into a room. `presentations/` holds slide decks that render wiki pages for that: each deck is a `deck.md` (title, audience, status, the wiki slugs it draws from) plus a `slides.jsx`, and `npm run decks` builds each one into a single HTML file. The reader's Decks tab lists them with a Present button.
+
+A deck is a rendering, never a source. It cites the pages it draws from, and the reader lights a stale lamp when any of those pages shows up in the log after the deck's `updated` date. Slides get shown, forwarded and reused long after the wiki has moved on, which makes them the easiest place for a parallel story to form. The lamp shows you the drift before you present. `presentations/intro` is a short example: the idea and this repo in eight slides.
+
 ## What it costs
 
 Every real source means a raw file, a compile across several pages, edge updates, index, log, lint. That's right for a messy, high-stakes domain where people disagree. It's overkill for a single owner, a short project, or a domain with no ambiguity.
@@ -112,7 +118,7 @@ Markdown-as-graph worked well at about 90 pages. I don't know where it breaks. M
 
 ```bash
 npm run setup          # git hooks, root and app installs
-npm run lint:wiki      # 25 pages, 0 errors
+npm run lint:wiki      # 26 pages, 0 errors
 npm test               # linter rule tests
 npm --prefix app run dev
 ```
@@ -127,7 +133,6 @@ The first instance grew several pieces that were too tied to its domain to share
 
 - **Progress board.** A view of every question as a card, with a timeline built from the log. That's why log bullets name each page individually.
 - **Question priority.** An automatic P0 to P3 grade for open questions, from status, evidence count, owners and staleness, with a manual `horizon` override.
-- **Decks generated from the wiki.** Slides that read wiki pages at build time and show a "stale" lamp when a page they cite changed after the deck's date.
 - **Metrics over time.** Pages, edges, question statuses and log activity per week, rebuilt from git history.
 - **A spaced-repetition drill.** An agent skill that quizzes you on the wiki with retrieval questions graded cold, so you learn the domain instead of looking it up every time.
 - **Hybrid search for agents.** A local BM25 plus vector index over `raw/` and `wiki/` for questions the index doesn't route.
@@ -146,4 +151,6 @@ The first instance grew several pieces that were too tied to its domain to share
 | `raw/` | Sources |
 | `scripts/wiki-lint.mjs` | Linter, with rule tests beside it |
 | `.githooks/pre-commit` | Raw, docs, lint and markdown gates |
-| `app/` | Reader and graph; `npm run export` makes one HTML file |
+| `app/` | Reader, graph and deck catalog; `npm run export` makes one HTML file |
+| `presentations/` | Slide decks built from wiki pages; `npm run decks` rebuilds them |
+| `.claude/skills/presentation/SKILL.md` | How an agent builds a deck |

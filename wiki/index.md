@@ -12,6 +12,7 @@ Tools and stores the kit is made of.
 | [Wiki layer](systems/wiki-layer.md) | Compiled pages and special files; the single source of truth | 2026-10-04 |
 | [Wiki linter](systems/wiki-linter.md) | Zero-dependency structural checks, E1 to E10 and W1 to W6 | 2026-10-04 |
 | [Pre-commit hook](systems/pre-commit-hook.md) | Raw, docs, wiki and markdown gates on every commit | 2026-10-04 |
+| [Decks](systems/decks.md) | Slide decks rendered from wiki pages, with a stale lamp | 2026-10-04 |
 | [Reader app](systems/reader-app.md) | Reader, search and graph over the wiki; holds no knowledge | 2026-10-04 |
 
 ## processes

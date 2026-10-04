@@ -2,7 +2,7 @@
 type: system
 edges:
   fed-by: [raw-layer]
-  feeds: [reader-app]
+  feeds: [reader-app, decks]
   supports: [query]
   owned-by: [agent-maintainers]
 last-verified: 2026-10-04

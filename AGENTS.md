@@ -9,6 +9,7 @@ This repo is a knowledge base that agents write and humans read. Every coding ag
 | `raw/` | Source material as markdown: meeting notes, articles, exports. Append-only. | Agents add files. Nobody edits one after it lands. |
 | `wiki/` | Compiled entity pages with typed edges. The single source of truth. | Agents, through the ingest operation. |
 | `app/` | A reader that renders `wiki/` and shows `raw/` headers in citation popovers. | Code only. It may not hold knowledge. |
+| `presentations/` | Slide decks that render wiki pages for a room. Each cites its source slugs. | Through the presentation skill. Never the first home of a fact. |
 | `docs/` | How the system works. Not domain knowledge. | Anyone. |
 
 If a fact is not in `wiki/`, or citable from `raw/`, treat it as unknown. The app, a slide or a README never originates a claim. They render or cite one, or the claim does not exist.
@@ -19,6 +20,7 @@ If a fact is not in `wiki/`, or citable from `raw/`, treat it as unknown. The ap
 2. `wiki/_canon.json` to confirm the idea's one home.
 3. [docs/hygiene.md](docs/hygiene.md) the first time in a session, and before any page you create.
 4. The operations in [.claude/skills/wiki/SKILL.md](.claude/skills/wiki/SKILL.md): ingest, query, lint.
+5. For decks, [.claude/skills/presentation/SKILL.md](.claude/skills/presentation/SKILL.md).
 
 ## Invariants
 

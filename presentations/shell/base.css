@@ -1,0 +1,798 @@
+/* Deck shell styles. The palette is a copy: app/src/index.css owns these
+   values (its @theme block, where they carry a --color- prefix). Change them
+   there first, then here, and rebuild every deck. */
+:root {
+  color-scheme: light;
+  --void: light-dark(oklch(96.5% 0 0), oklch(17.5% 0.017 240));
+  --console: light-dark(oklch(99.5% 0 0), oklch(22.5% 0.021 240));
+  --edge: light-dark(oklch(80% 0.022 220), oklch(30% 0.023 240));
+  --fg: light-dark(oklch(16% 0.006 220), oklch(83% 0.012 90));
+  --dim: light-dark(oklch(31% 0.008 220), oklch(69% 0.015 240));
+  --faint: light-dark(oklch(48% 0.012 220), oklch(53% 0.02 240));
+  --amber: light-dark(oklch(56% 0.19 55), oklch(78% 0.14 75));
+  --gauge: light-dark(oklch(38% 0.13 220), oklch(72% 0.12 150));
+  --alert: light-dark(oklch(52% 0.17 15), oklch(67% 0.17 40));
+  --font-sans: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --font-display: 'Saira', system-ui, sans-serif;
+  --font-mono: 'Fragment Mono', ui-monospace, monospace;
+  --deck-scale: 1;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--fg);
+  background: var(--void);
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--amber);
+  color: light-dark(oklch(99% 0.01 90), oklch(18% 0.02 240));
+}
+
+button:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* Type scale. Slides use these sizes and no others. */
+h1,
+h2 {
+  font-family: var(--font-display);
+  font-stretch: 75%;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  color: var(--fg);
+}
+
+h1 {
+  font-size: 2.6rem;
+  margin: 0 0 0.75rem;
+}
+
+h2 {
+  font-size: 1.55rem;
+  margin: 0 0 0.75rem;
+}
+
+h3 {
+  font-family: var(--font-display);
+  font-stretch: 85%;
+  font-weight: 550;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin: 0 0 0.5rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--dim);
+  margin: 0 0 1.5rem;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+/* Panel legend: letterspaced condensed caps after a small block marker */
+.legend {
+  font-family: var(--font-display);
+  font-stretch: 85%;
+  font-weight: 550;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--faint);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 1rem;
+}
+
+.legend::before {
+  content: '▮';
+  color: var(--amber);
+  font-size: 9px;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-stretch: 75%;
+  font-weight: 650;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin: 0 0 1.25rem;
+}
+
+/* ---- Chrome: a hairline frame inset from the window, progress on its top
+   rule, nav on its bottom rule, copper ticks at two corners. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 16px;
+  border: 1px solid var(--edge);
+  pointer-events: none;
+  z-index: 6;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 16px;
+  pointer-events: none;
+  z-index: 7;
+  background-image:
+    linear-gradient(var(--amber), var(--amber)), linear-gradient(var(--amber), var(--amber)),
+    linear-gradient(var(--amber), var(--amber)), linear-gradient(var(--amber), var(--amber));
+  background-repeat: no-repeat;
+  background-size:
+    14px 1px,
+    1px 14px,
+    14px 1px,
+    1px 14px;
+  background-position:
+    left top,
+    left top,
+    right bottom,
+    right bottom;
+}
+
+.progress-track {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  transform: translateY(-50%);
+  z-index: 7;
+}
+
+.progress {
+  height: 100%;
+  background: var(--amber);
+  transition: width 0.3s;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  /* safe: a slide that is too tall overflows toward the nav, never up into the watermark */
+  align-items: safe center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  background: var(--void);
+}
+
+.slide.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.slide.appendix::before {
+  content: 'APPENDIX';
+  position: absolute;
+  top: 27px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-stretch: 85%;
+  font-weight: 550;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: var(--dim);
+  background: var(--void);
+  padding: 2px 12px;
+  z-index: 7;
+}
+
+/* The slide column. Zoom is a transform from the center, so the content
+   stays centered at every step (CSS zoom would anchor it top-left). */
+.slide-content {
+  --column: 1000px;
+  width: 100%;
+  /* Divide by the scale so the zoomed column still fits inside the frame */
+  max-width: min(var(--column), calc((100vw - 48px) / var(--deck-scale)));
+  padding: calc(76px / var(--deck-scale)) 40px calc(104px / var(--deck-scale));
+  transform: scale(var(--deck-scale));
+  transform-origin: center center;
+}
+
+.slide-content.wide {
+  --column: 1120px;
+}
+
+.watermark {
+  position: fixed;
+  top: 32px;
+  left: 34px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.watermark::before {
+  content: '▮';
+  color: var(--amber);
+  font-size: 8px;
+}
+
+nav.deck-nav {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 5px 16px;
+  z-index: 7;
+  background: var(--void);
+}
+
+nav.deck-nav > button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--faint);
+  padding: 4px 8px;
+}
+
+nav.deck-nav > button:hover:not(:disabled) {
+  color: var(--amber);
+}
+
+nav.deck-nav > button:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.theme-toggle,
+.scale-toggle {
+  position: fixed;
+  top: 28px;
+  z-index: 8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  background: none;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.theme-toggle {
+  right: 34px;
+}
+
+.scale-toggle {
+  right: 72px;
+  gap: 2px;
+}
+
+.theme-toggle:hover,
+.scale-toggle:hover,
+.scale-toggle.active {
+  color: var(--amber);
+  border-color: var(--amber);
+}
+
+.scale-label {
+  font-size: 0.62rem;
+}
+
+.slide-number {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  width: 10px;
+  height: 3px;
+  border-radius: 1px;
+  background: transparent;
+  border: 1px solid var(--edge);
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.dot:hover {
+  border-color: var(--faint);
+}
+
+.dot.on {
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+/* Appendix pips are smaller and quieter, after a gap */
+.dot.appendix {
+  width: 6px;
+  height: 2px;
+  opacity: 0.45;
+}
+
+.dot:not(.appendix) + .dot.appendix {
+  margin-left: 10px;
+}
+
+.dot.appendix.on {
+  opacity: 1;
+}
+
+/* ---- Slide primitives. A deck restyles one by restating the selector in
+   its deck.css, which loads after this file. */
+
+/* Source line: the wiki slugs behind a slide's claims */
+.cite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 1.5rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--dim);
+}
+
+.cite::before {
+  content: 'from';
+  font-family: var(--font-display);
+  font-stretch: 85%;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-right: 2px;
+}
+
+.cite span {
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  padding: 1px 6px;
+  background: var(--console);
+}
+
+/* One-sentence assertion in display type */
+.kernel {
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 650;
+  font-size: 2rem;
+  line-height: 1.2;
+  margin: 0 0 1.25rem;
+  color: var(--fg);
+}
+
+.kernel em {
+  font-style: normal;
+  color: var(--amber);
+}
+
+.cols {
+  display: flex;
+  gap: 28px;
+}
+
+.cols > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Cards in a grid stretch to the tallest in their row */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(var(--cards, 2), 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.card {
+  background: var(--console);
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  padding: 16px 18px;
+}
+
+.card--accent {
+  border-top: 2px solid var(--amber);
+}
+
+.card p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--dim);
+}
+
+.card p + p {
+  margin-top: 0.5rem;
+}
+
+.card code {
+  color: var(--amber);
+}
+
+/* Ruled rows: a label column and a text column */
+.ledger {
+  border-top: 1px solid var(--edge);
+}
+
+.ledger-row {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--edge);
+}
+
+.ledger-label {
+  flex: 0 0 180px;
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 650;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.cols .ledger-label {
+  flex-basis: 140px;
+}
+
+.ledger-label code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ledger-txt {
+  flex: 1;
+  font-size: 0.92rem;
+  color: var(--dim);
+}
+
+.ledger-txt code {
+  color: var(--fg);
+}
+
+/* Numbered walkthrough */
+.steps {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--edge);
+}
+
+.steps li {
+  counter-increment: step;
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--edge);
+  font-size: 0.92rem;
+  color: var(--dim);
+}
+
+.steps li::before {
+  content: counter(step, decimal-leading-zero);
+  flex: 0 0 24px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--faint);
+}
+
+.steps code {
+  color: var(--fg);
+}
+
+/* Stacked layers joined by arrows: what flows into what */
+.layers {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.layer {
+  flex: 1;
+  min-width: 0;
+  background: var(--console);
+  border: 1px solid var(--edge);
+  border-top: 2px solid var(--amber);
+  border-radius: 3px;
+  padding: 16px 18px;
+}
+
+.layer-path {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--fg);
+  margin: 0 0 0.35rem;
+}
+
+.layer p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--dim);
+}
+
+.layer .layer-who {
+  margin-top: 0.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--edge);
+  font-size: 0.8rem;
+}
+
+.layer-arrow {
+  flex: 0 0 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  color: var(--faint);
+}
+
+/* A file excerpt, set like the reader's code blocks */
+.code {
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--console);
+  border: 1px solid var(--edge);
+  border-left: 2px solid var(--amber);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--fg);
+  white-space: pre;
+  overflow: hidden;
+}
+
+.code .k {
+  color: var(--amber);
+}
+
+.code .c {
+  color: var(--faint);
+}
+
+/* Closing line under a slide's evidence */
+.takeaway {
+  margin: 1.25rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--edge);
+  font-size: 0.95rem;
+  color: var(--dim);
+}
+
+/* A ruled list already ends on a rule */
+.ledger + .takeaway,
+.steps + .takeaway {
+  border-top: none;
+  padding-top: 0;
+}
+
+.takeaway strong {
+  color: var(--fg);
+}
+
+.fine-note {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--dim);
+}
+
+.sources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--edge);
+  column-count: 2;
+  column-gap: 40px;
+}
+
+.sources-list li {
+  break-inside: avoid;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--edge);
+}
+
+.sources-list .src-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.sources-list .src-slug {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--dim);
+}
+
+.as-of {
+  margin: 1.25rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--dim);
+}
+
+/* ---- Reveal: direct children of .anim stagger in reading order; a container
+   marked data-cascade stays put and passes the reveal to its items. A slide
+   settles in about a second. */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.anim > * {
+  opacity: 0;
+  animation: fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anim > :nth-child(1) { animation-delay: 0.03s; }
+.anim > :nth-child(2) { animation-delay: 0.1s; }
+.anim > :nth-child(3) { animation-delay: 0.17s; }
+.anim > :nth-child(4) { animation-delay: 0.24s; }
+.anim > :nth-child(5) { animation-delay: 0.31s; }
+.anim > :nth-child(6) { animation-delay: 0.38s; }
+.anim > :nth-child(n + 7) { animation-delay: 0.45s; }
+
+.anim > [data-cascade] {
+  animation: none;
+  opacity: 1;
+}
+
+.anim [data-cascade] > * {
+  opacity: 0;
+  animation: fadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anim [data-cascade] > :nth-child(1) { animation-delay: 0.22s; }
+.anim [data-cascade] > :nth-child(2) { animation-delay: 0.3s; }
+.anim [data-cascade] > :nth-child(3) { animation-delay: 0.38s; }
+.anim [data-cascade] > :nth-child(4) { animation-delay: 0.46s; }
+.anim [data-cascade] > :nth-child(5) { animation-delay: 0.54s; }
+.anim [data-cascade] > :nth-child(6) { animation-delay: 0.62s; }
+.anim [data-cascade] > :nth-child(n + 7) { animation-delay: 0.7s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim > *,
+  .anim [data-cascade] > * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .slide,
+  .progress {
+    transition: none;
+  }
+}
+
+/* ---- Print: every slide is a 16:9 page with its own frame, motion settled.
+   Switch to the light theme (T) before printing. */
+@page {
+  size: 13.333in 7.5in;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    height: auto;
+    overflow: visible;
+  }
+
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .progress-track,
+  .theme-toggle,
+  .scale-toggle,
+  nav.deck-nav,
+  .watermark,
+  body::before,
+  body::after {
+    display: none !important;
+  }
+
+  .slide {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 100vh;
+    opacity: 1;
+    break-after: page;
+  }
+
+  .slide::after {
+    content: '';
+    position: absolute;
+    inset: 16px;
+    border: 1px solid var(--edge);
+    pointer-events: none;
+  }
+
+  .slide-content,
+  .slide-content * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

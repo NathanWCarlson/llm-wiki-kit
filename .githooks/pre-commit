@@ -22,7 +22,7 @@ if [ -n "$raw_changed" ] && [ "$RAW_OK" != "1" ]; then
   fail=1
 fi
 
-code_staged=$(printf '%s\n' "$staged" | grep -E '^(app/src/|scripts/|\.githooks/)')
+code_staged=$(printf '%s\n' "$staged" | grep -E '^(app/src/|scripts/|\.githooks/|presentations/(shell|scripts|_template)/|presentations/[^/]+/(deck\.md|slides\.jsx|deck\.css))')
 wiki_staged=$(printf '%s\n' "$staged" | grep -E '^wiki/' | grep -v '^wiki/log\.md$')
 log_staged=$(printf '%s\n' "$staged" | grep -c '^wiki/log\.md$')
 

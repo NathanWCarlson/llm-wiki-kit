@@ -7,12 +7,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "setup": "git config core.hooksPath .githooks && npm install && npm --prefix app install",
+    "setup": "git config core.hooksPath .githooks && npm install && npm --prefix app install && npm --prefix presentations install",
     "lint:wiki": "node scripts/wiki-lint.mjs",
     "lint:md": "markdownlint-cli2",
     "lint:md:fix": "markdownlint-cli2 --fix",
     "test": "node --test scripts/",
-    "verify": "npm run lint:md && npm run lint:wiki -- --strict-warns && npm test && npm --prefix app run verify"
+    "verify": "npm run lint:md && npm run lint:wiki -- --strict-warns && npm test && npm --prefix presentations run lint && npm --prefix app run verify",
+    "decks": "npm --prefix presentations run build"
   },
   "devDependencies": {
     "markdownlint-cli2": "^0.23.3"

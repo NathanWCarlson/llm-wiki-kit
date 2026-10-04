@@ -6,6 +6,8 @@ import { RAW_META } from 'virtual:raw-meta'
 import { citedBy, classifyHref, renderMarkdown, sectionsOf } from './lib/wikiLinks'
 import { graph, home, parsePage, schema } from './lib/wiki'
 import { searchPages } from './lib/search'
+import { decks, parseDeck } from './lib/decks'
+import { lastLoggedBySlug } from './lib/log'
 
 // Vitest stubs CSS imports to empty strings, so read the file itself.
 const css = readFileSync(join(import.meta.dirname, 'index.css'), 'utf8')
@@ -182,5 +184,34 @@ describe('raw citations', () => {
 describe('search', () => {
   it.each(pages.map((p) => [p.title, p.slug] as const))('finds "%s" by its title', (title, slug) => {
     expect(searchPages(title)[0]?.page.slug).toBe(slug)
+  })
+})
+
+describe('decks', () => {
+  it('cite only real wiki pages', () => {
+    expect(decks.length).toBeGreaterThan(0)
+    for (const d of decks) expect(d.unknownSources, d.slug).toEqual([])
+  })
+
+  it('ship a built share for every deck that can be presented', () => {
+    for (const d of decks.filter((x) => x.status !== 'draft')) {
+      expect(d.html, `${d.slug}: run npm --prefix presentations run build`).toBeTruthy()
+      expect(d.builtAt, d.slug).toBeTruthy()
+    }
+  })
+
+  it('reads the newest log date per page, skipping lines it cannot parse', () => {
+    const latest = lastLoggedBySlug(
+      '## [2026-10-05] ingest | B\n\n- Updated: concepts/canon-map.md\n- no page here\n\n## [2026-10-01] ingest | A\n\n- Updated: concepts/canon-map.md and systems/raw-layer.md\n',
+    )
+    expect(latest.get('canon-map')).toBe('2026-10-05')
+    expect(latest.get('raw-layer')).toBe('2026-10-01')
+  })
+
+  it('goes stale when a source page is logged after the deck was updated', () => {
+    const md = (updated: string) =>
+      `---\nslug: x\ntitle: X\nstatus: ready\nupdated: ${updated}\nsources:\n  - canon-map\n---\n`
+    expect(parseDeck('x', md('2000-01-01'))!.staleSources).toEqual(['canon-map'])
+    expect(parseDeck('x', md('2999-01-01'))!.staleSources).toEqual([])
   })
 })

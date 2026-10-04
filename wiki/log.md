@@ -2,6 +2,14 @@
 
 Newest first. Never edit an old entry. Heading shape: `## [YYYY-MM-DD] kind | title`.
 
+## [2026-10-04] feat | Decks: shell, intro deck and catalog in the reader
+
+- Created: systems/decks.md
+- Updated: systems/wiki-layer.md
+- Updated: systems/reader-app.md
+- Decks build to single HTML files with one inliner shared with the reader export, which dropped a dependency with an open advisory
+- A deck is stale when a source page is logged after its updated date, or its shell fingerprint is old
+
 ## [2026-10-04] feat | Sections menu, back to top, presentation scale, graph zoom
 
 - Updated: systems/reader-app.md

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUp, ArrowUpRight, ChevronRight, Network, Search } from 'lucide-react'
+import { ArrowUp, ArrowUpRight, ChevronRight, Network, Presentation, Search } from 'lucide-react'
 import { edgeLabel, FOLDERS, graph, home, INVERSE_OF, pagesInFolder } from '../lib/wiki'
 import { STATUS_COLOR } from '../lib/theme'
 import { useAppStore } from '../store/useAppStore'
 import { CitePopover, Markdown, type CiteAnchor } from '../components/Markdown'
 import { sectionsOf, type Section } from '../lib/wikiLinks'
+import { decksCiting } from '../lib/decks'
 import { Legend, Panel, TypeBadge } from '../components/ui'
 import type { WikiPage } from '../types/wiki'
 
@@ -341,6 +342,8 @@ function ChipGroup({ label, slugs, openPage }: { label: string; slugs: string[];
 
 function ConnectionsPanel({ page, openPage }: { page: WikiPage; openPage: (slug: string) => void }) {
   const showOnGraph = useAppStore((s) => s.showOnGraph)
+  const setView = useAppStore((s) => s.setView)
+  const inDecks = decksCiting(page.slug)
 
   const { outbound, inbound, mentions } = useMemo(() => {
     const outbound = Object.entries(page.edges).filter(([, targets]) => targets.length)
@@ -397,6 +400,25 @@ function ConnectionsPanel({ page, openPage }: { page: WikiPage; openPage: (slug:
               <ChipGroup key={key} label={`${edgeLabel(key)} this`} slugs={from} openPage={openPage} />
             ))}
             {mentions.length > 0 && <ChipGroup label="mentioned by" slugs={mentions} openPage={openPage} />}
+          </div>
+        </section>
+      )}
+
+      {inDecks.length > 0 && (
+        <section>
+          <Legend>In decks</Legend>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {inDecks.map((d) => (
+              <button
+                key={d.slug}
+                type="button"
+                onClick={() => setView('decks')}
+                className="inline-flex items-center gap-1.5 rounded-sm border border-edge px-1.5 py-0.5 text-data text-dim transition-colors hover:border-amber hover:text-amber"
+              >
+                <Presentation size={11} className="text-faint" />
+                {d.title}
+              </button>
+            ))}
           </div>
         </section>
       )}

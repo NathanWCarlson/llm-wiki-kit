@@ -22,6 +22,7 @@ last-verified: 2026-10-04
 - Citation popovers show a raw file's header lines and every page that cites it. Source bodies never enter the bundle.
 - Long pages get a Sections menu and a back-to-top button. A header control scales the whole UI for screen sharing.
 - The graph zooms and pans: drag, pinch, or ⌘-scroll.
+- The Decks tab lists [[decks]] with a stale lamp and a Present button. Each page lists the decks that cite it.
 - `npm run export` writes one self-contained HTML file.
 
 ## Rule

@@ -72,6 +72,7 @@ Always both steps: save the source, then compile it.
 
    Name every touched page on its own bullet. Tools read these bullets; "updated all concept pages" is invisible to them. The kind (`ingest`) must exist in `wiki/_kinds.json`. Kinds name the activity, never the topic.
 6. **Lint.** `npm run lint:wiki`. Fix every `E` code before committing.
+7. **Decks.** A deck that cites a page you changed shows a stale lamp in the reader's Decks view. Update the deck, bump its `updated:` date and run `npm run decks`, or leave it stale on purpose and say so in the log.
 
 ## Query
 

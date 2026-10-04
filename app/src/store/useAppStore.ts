@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type PrimaryView = 'reader' | 'graph'
+export type PrimaryView = 'reader' | 'graph' | 'decks'
 export type Theme = 'light' | 'dark'
 
 /** Presentation scale steps for projectors and screen shares. */

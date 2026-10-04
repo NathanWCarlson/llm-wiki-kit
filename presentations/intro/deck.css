@@ -1,0 +1,17 @@
+/* Title slide: the two ideas the kit combines, under the deck title */
+.origin {
+  margin-top: 2rem;
+}
+
+.origin h3 {
+  margin-bottom: 0.4rem;
+}
+
+/* Repo slide: the folder map is denser than a default ledger */
+.repo .ledger-row {
+  padding: 8px 0;
+}
+
+.repo .ledger-label {
+  flex-basis: 120px;
+}

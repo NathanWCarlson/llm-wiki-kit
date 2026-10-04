@@ -1,14 +1,16 @@
 import { useEffect } from 'react'
-import { BookOpen, Moon, Network, Sun, ZoomIn } from 'lucide-react'
+import { BookOpen, Moon, Network, Presentation, Sun, ZoomIn } from 'lucide-react'
 import { useAppStore, type PrimaryView } from './store/useAppStore'
 import { graph } from './lib/wiki'
 import { CommandPalette } from './components/CommandPalette'
 import { ReaderView } from './views/ReaderView'
 import { GraphView } from './views/GraphView'
+import { DecksView } from './views/DecksView'
 
 const NAV: { view: PrimaryView; label: string; icon: typeof BookOpen }[] = [
   { view: 'reader', label: 'Read', icon: BookOpen },
   { view: 'graph', label: 'Graph', icon: Network },
+  { view: 'decks', label: 'Decks', icon: Presentation },
 ]
 
 export default function App() {
@@ -92,7 +94,7 @@ export default function App() {
         </div>
       </header>
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-5">
-        {view === 'graph' ? <GraphView /> : <ReaderView />}
+        {view === 'graph' ? <GraphView /> : view === 'decks' ? <DecksView /> : <ReaderView />}
       </main>
     </div>
   )

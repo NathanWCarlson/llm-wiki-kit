@@ -11,11 +11,12 @@ Start with [docs/GUIDE.md](docs/GUIDE.md). It covers the idea, how the pieces fi
 Needs Node 22 or newer.
 
 ```bash
-npm run setup               # point git at .githooks/, install root and app deps
+npm run setup               # point git at .githooks/, install root, app and deck deps
 npm run lint:wiki           # check the wiki
 npm test                    # linter rule tests
 npm --prefix app run dev    # open the reader
 npm --prefix app run export # one self-contained HTML file of the whole wiki
+npm run decks               # rebuild the slide decks in presentations/shares/
 npm run verify              # everything above, warnings as errors
 ```
 
@@ -31,7 +32,8 @@ Open the repo in Claude Code (or Copilot, Cursor, Codex) and say "add this to th
 | `wiki/` | Compiled pages, index, log, schema, canon map |
 | `scripts/` | Linter and its tests |
 | `.githooks/` | Pre-commit gates |
-| `app/` | Reader with search and graph |
+| `app/` | Reader with search, graph and decks |
+| `presentations/` | Slide decks built from wiki pages |
 | `docs/` | Guide, hygiene standard, design brief |
 | `references/` | Page templates |
 
