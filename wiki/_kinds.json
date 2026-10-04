@@ -4,6 +4,7 @@
     "ingest": "compiled a source from raw/ into wiki pages",
     "decision": "recorded a change of direction or schema",
     "hygiene": "ran the hygiene pass or the organization checklist",
-    "lint": "ran the linter and fixed what it found"
+    "lint": "ran the linter and fixed what it found",
+    "feat": "added or changed code in app/ or scripts/"
   }
 }

@@ -2,6 +2,13 @@
 
 Newest first. Never edit an old entry. Heading shape: `## [YYYY-MM-DD] kind | title`.
 
+## [2026-10-04] feat | Reader app with search, graph and citation index
+
+- Added: app/ (reader, graph, command palette, single-file export)
+- Updated: systems/reader-app.md
+- Schema, edge keys and type colors come from wiki/_schema.json
+- Citation popovers list the pages that cite each source
+
 ## [2026-10-04] hygiene | wiki pass after first compile
 
 - Fossil grep: 6 hits, all pages quoting the phrases rather than using them. None fixed.

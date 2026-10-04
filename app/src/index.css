@@ -1,0 +1,373 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --font-display: 'Saira', system-ui, sans-serif;
+  --font-mono: 'Fragment Mono', ui-monospace, monospace;
+
+  /* Light is hot copper + cold teal on white paper with cool-undertone ink.
+     Dark is a petrol void lifted off pure black, fg softened to ~10.5:1 so
+     text does not halate. */
+  --color-void: light-dark(oklch(96.5% 0 0), oklch(17.5% 0.017 240));
+  --color-console: light-dark(oklch(99.5% 0 0), oklch(22.5% 0.021 240));
+  --color-edge: light-dark(oklch(80% 0.022 220), oklch(30% 0.023 240));
+  --color-fg: light-dark(oklch(16% 0.006 220), oklch(83% 0.012 90));
+  --color-dim: light-dark(oklch(31% 0.008 220), oklch(69% 0.015 240));
+  --color-faint: light-dark(oklch(48% 0.012 220), oklch(53% 0.02 240));
+
+  /* accents: copper for action, teal for settled, oxide red for flags */
+  --color-amber: light-dark(oklch(56% 0.19 55), oklch(78% 0.14 75));
+  --color-gauge: light-dark(oklch(38% 0.13 220), oklch(72% 0.12 150));
+  --color-alert: light-dark(oklch(52% 0.17 15), oklch(67% 0.17 40));
+
+  /* Use these steps, never a raw px size. */
+  --text-label: 9px;
+  --text-chrome: 10px;
+  --text-data: 11px;
+  --text-body: 12px;
+  --text-lede: 13px;
+  --text-figure: 15px;
+
+  --tracking-display: 0.03em;
+  --tracking-meta: 0.06em;
+  --tracking-label: 0.08em;
+  --tracking-caps: 0.12em;
+
+  --stretch-tight: 75%;
+  --stretch-mid: 85%;
+}
+
+/* One token per page type in wiki/_schema.json. They are reached through
+   var(--color-<type>) in inline styles, which Tailwind cannot see, and it drops
+   @theme entries no utility references, so they live on :root instead. */
+:root {
+  --color-system: light-dark(oklch(47% 0.1 235), oklch(72% 0.1 230));
+  --color-process: light-dark(oklch(48% 0.11 300), oklch(74% 0.1 300));
+  --color-concept: light-dark(oklch(53% 0.11 80), oklch(78% 0.11 85));
+  --color-team: light-dark(oklch(51% 0.13 15), oklch(74% 0.11 15));
+  --color-project: light-dark(oklch(49% 0.12 330), oklch(75% 0.1 330));
+  --color-location: light-dark(oklch(48% 0.1 150), oklch(73% 0.11 150));
+  --color-question: light-dark(oklch(52% 0.13 55), oklch(73% 0.13 55));
+}
+
+/* Browsers center <button> text by default, which breaks the moment a chip label
+   wraps. Left is the default here; centering is opt-in. */
+@layer base {
+  button {
+    text-align: left;
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* Reserve the scrollbar gutter so the centered shell does not jump between a
+   tall view and a short one. */
+html {
+  background: var(--color-void);
+  scrollbar-gutter: stable;
+  overflow-y: scroll;
+}
+
+body {
+  margin: 0;
+  background: var(--color-void);
+  /* clip, not hidden: hidden makes body a scroll container and breaks sticky */
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--color-amber);
+  color: light-dark(oklch(99% 0.01 90), oklch(18% 0.02 240));
+}
+
+/* Defaults, not overrides: in a layer so a utility on the same element still wins. */
+@layer components {
+  .legend {
+    font-family: var(--font-display);
+    font-stretch: var(--stretch-mid);
+    font-weight: 550;
+    font-size: var(--text-data);
+    line-height: 1.3;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-faint);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .legend::before {
+    content: '▮';
+    color: var(--color-amber);
+    font-size: var(--text-label);
+  }
+
+  .display {
+    font-family: var(--font-display);
+    font-stretch: var(--stretch-tight);
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-display);
+  }
+}
+
+button:focus-visible,
+[role='button']:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+}
+
+/* The palette input holds focus the whole time the dialog is open; a ring
+   there would be permanent chrome. The row cursor carries keyboard position. */
+.palette-input:focus-visible {
+  outline: none;
+}
+
+/* Matched terms in a snippet: weight and hue, no fill that reads as selection. */
+.palette-hit {
+  color: var(--color-amber);
+  font-weight: 600;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.rise > * {
+  animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.rise > *:nth-child(2) { animation-delay: 0.05s; }
+.rise > *:nth-child(n + 3) { animation-delay: 0.1s; }
+
+.graph-canvas .graph-edge {
+  opacity: 0;
+  transition:
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 0.22s ease,
+    stroke-opacity 0.22s ease,
+    stroke-width 0.22s ease;
+}
+.graph-canvas--in .graph-edge {
+  opacity: 1;
+}
+.graph-canvas .graph-node {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.graph-canvas--in .graph-node {
+  opacity: 1;
+}
+.graph-canvas .graph-label {
+  /* halo keeps labels legible across edges and node fills */
+  paint-order: stroke;
+  stroke: var(--color-console);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  transition: fill 0.2s ease, opacity 0.2s ease;
+}
+.graph-canvas .graph-ring {
+  animation: graph-pulse 1.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+@keyframes graph-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.15; transform: scale(1.15); }
+}
+.graph-hover-card {
+  animation: graph-card-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes graph-card-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.palette-scrim {
+  background: color-mix(in oklab, black 45%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: palette-scrim-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes palette-scrim-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise > *,
+  .graph-canvas .graph-ring,
+  .graph-hover-card,
+  .palette-scrim {
+    animation: none !important;
+  }
+  .graph-canvas .graph-edge,
+  .graph-canvas .graph-node {
+    opacity: 1 !important;
+    transition: none !important;
+  }
+}
+
+/* rendered wiki markdown */
+.wiki-prose {
+  font-size: 0.93rem;
+  line-height: 1.75;
+  color: var(--color-fg);
+  overflow-wrap: anywhere;
+}
+.wiki-prose h1 {
+  font-family: var(--font-display);
+  font-stretch: var(--stretch-tight);
+  font-weight: 650;
+  text-transform: uppercase;
+  font-size: 1.85rem;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+  hyphens: auto;
+}
+.wiki-prose h2 {
+  font-family: var(--font-display);
+  font-stretch: var(--stretch-mid);
+  font-weight: 550;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+  margin: 2rem 0 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wiki-prose h2::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--color-edge);
+}
+.wiki-prose h3 {
+  font-family: var(--font-display);
+  font-stretch: var(--stretch-mid);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  margin: 1.4rem 0 0.4rem;
+}
+.wiki-prose p { margin: 0.6rem 0; }
+.wiki-prose ul { margin: 0.6rem 0 0.6rem 1.25rem; list-style: square; }
+.wiki-prose ol { margin: 0.6rem 0 0.6rem 1.25rem; list-style: decimal; }
+.wiki-prose li { margin: 0.3rem 0; }
+.wiki-prose li::marker { color: var(--color-amber); font-size: 0.8em; }
+.wiki-prose blockquote {
+  margin: 0.85rem 0;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid var(--color-edge);
+  border-radius: 4px;
+  color: var(--color-faint);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.7;
+}
+.wiki-prose blockquote p { margin: 0.15rem 0; }
+.wiki-prose strong { font-weight: 700; }
+.wiki-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  background: color-mix(in oklab, var(--color-edge) 45%, transparent);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+.wiki-prose pre {
+  margin: 0.85rem 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--color-edge);
+  border-radius: 4px;
+  white-space: pre-wrap;
+}
+.wiki-prose pre code { background: none; padding: 0; }
+/* block + overflow so a wide table scrolls inside the article, never the page */
+.wiki-prose table {
+  width: 100%;
+  margin: 0.85rem 0;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  display: block;
+  overflow-x: auto;
+  overflow-wrap: normal;
+}
+.wiki-prose th {
+  font-family: var(--font-display);
+  font-stretch: var(--stretch-mid);
+  font-weight: 550;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--color-faint);
+  padding: 0.45rem 0.7rem 0.45rem 0;
+  white-space: nowrap;
+}
+.wiki-prose td {
+  border-top: 1px solid var(--color-edge);
+  padding: 0.5rem 0.7rem 0.5rem 0;
+  vertical-align: top;
+  color: var(--color-dim);
+}
+
+/* Preflight makes a bare <a> inherit body color, so a link the classifier
+   missed would read as prose. Nothing should reach this; it makes a miss visible. */
+.wiki-prose a:not([class]) {
+  color: var(--color-gauge);
+  text-decoration: underline dotted;
+}
+.wikilink {
+  color: var(--color-amber);
+  text-decoration: none;
+  border-bottom: 1px dotted color-mix(in oklab, var(--color-amber) 45%, transparent);
+}
+.wikilink:hover { border-bottom-style: solid; }
+.extlink {
+  color: var(--color-gauge);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--color-gauge);
+}
+.extlink::after {
+  content: '↗';
+  margin-left: 0.2em;
+  font-size: 0.8em;
+}
+.deadlink {
+  color: var(--color-faint);
+  border-bottom: 1px dashed color-mix(in oklab, var(--color-faint) 55%, transparent);
+  cursor: help;
+}
+/* a repo file the reader does not serve: shown, not linked */
+.filelink {
+  color: var(--color-dim);
+  border-bottom: 1px dotted var(--color-edge);
+}
+.rawcite {
+  color: var(--color-faint);
+  font-family: var(--font-mono);
+  font-size: 0.75em;
+  cursor: pointer;
+  border-bottom: 1px dotted var(--color-edge);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.rawcite:hover,
+.rawcite:focus-visible {
+  color: var(--color-amber);
+  border-bottom-color: var(--color-amber);
+  outline: none;
+}

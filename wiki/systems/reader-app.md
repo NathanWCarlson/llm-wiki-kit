@@ -19,7 +19,7 @@ last-verified: 2026-10-04
 
 - Reads `wiki/` at build time. Nothing to deploy beyond static files.
 - Reads [[shared-schema]] for folders and edge keys, so it agrees with the [[wiki-linter]].
-- Citation popovers show a raw file's header lines only. Source bodies never enter the bundle.
+- Citation popovers show a raw file's header lines and every page that cites it. Source bodies never enter the bundle.
 - `npm run export` writes one self-contained HTML file.
 
 ## Rule
