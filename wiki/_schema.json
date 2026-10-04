@@ -1,0 +1,29 @@
+{
+  "note": "One definition of folders, page types and edges. scripts/wiki-lint.mjs and app/src/lib/wiki.ts both import this file, so the linter and the reader cannot disagree about what a valid page is.",
+  "folders": {
+    "systems": "system",
+    "processes": "process",
+    "concepts": "concept",
+    "people-teams": "team",
+    "projects": "project",
+    "locations": "location",
+    "questions": "question"
+  },
+  "edges": ["feeds", "fed-by", "depends-on", "supports", "owned-by", "part-of", "runs-at", "causes", "resolved-by"],
+  "inverse": { "feeds": "fed-by", "depends-on": "supports" },
+  "edgeTargetType": { "owned-by": "team", "runs-at": "location" },
+  "question": {
+    "status": ["open", "partially-answered", "answered"],
+    "horizon": ["now", "next", "later", "parked"]
+  },
+  "softMaxLines": {
+    "system": 120,
+    "process": 150,
+    "concept": 220,
+    "team": 120,
+    "project": 160,
+    "location": 120,
+    "question": 100
+  },
+  "staleDays": 60
+}

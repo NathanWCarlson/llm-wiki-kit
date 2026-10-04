@@ -1,0 +1,9 @@
+{
+  "note": "Allowed kinds for '## [date] kind | title' headings in log.md. A kind names the activity, not the topic. The linter fails on an undeclared kind and on a declared kind nothing uses.",
+  "kinds": {
+    "ingest": "compiled a source from raw/ into wiki pages",
+    "decision": "recorded a change of direction or schema",
+    "hygiene": "ran the hygiene pass or the organization checklist",
+    "lint": "ran the linter and fixed what it found"
+  }
+}

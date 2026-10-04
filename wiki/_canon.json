@@ -1,0 +1,32 @@
+{
+  "standard": "One home per idea. Other pages give a sentence and a link.",
+  "enforce_facts": true,
+  "concerns": [
+    { "concern": "Where sources live and why they are immutable", "home": "wiki/systems/raw-layer.md" },
+    { "concern": "What the compiled wiki is and its special files", "home": "wiki/systems/wiki-layer.md" },
+    { "concern": "What the linter checks", "home": "wiki/systems/wiki-linter.md" },
+    { "concern": "Commit gates and bypasses", "home": "wiki/systems/pre-commit-hook.md" },
+    { "concern": "The reader app and its no-knowledge rule", "home": "wiki/systems/reader-app.md" },
+    { "concern": "Folders, types and edge keys", "home": "wiki/concepts/shared-schema.md" },
+    { "concern": "Edge meanings and rules", "home": "wiki/concepts/typed-edges.md" },
+    { "concern": "One home per idea, and the regression that moved it into JSON", "home": "wiki/concepts/canon-map.md" },
+    { "concern": "Registered facts and how matching works", "home": "wiki/concepts/fact-registry.md" },
+    { "concern": "Layers of uncertainty", "home": "wiki/concepts/known-unknowns.md" },
+    { "concern": "Log format, kinds and discipline", "home": "wiki/concepts/operations-log.md" },
+    { "concern": "When a new page is justified", "home": "wiki/concepts/update-over-create.md" },
+    { "concern": "Changing direction without fossils", "home": "wiki/concepts/supersede-in-place.md" },
+    { "concern": "Reading order for long pages", "home": "wiki/concepts/page-zones.md" },
+    { "concern": "Which numbers belong on a canon page", "home": "wiki/concepts/tomorrow-morning-test.md" },
+    { "concern": "Ingest steps", "home": "wiki/processes/ingest.md" },
+    { "concern": "Answering from the wiki", "home": "wiki/processes/query.md" },
+    { "concern": "Running the linter", "home": "wiki/processes/lint.md" },
+    { "concern": "Weekly review of what lint cannot see", "home": "wiki/processes/hygiene-pass.md" },
+    { "concern": "What the kit contains and how to start your own", "home": "wiki/projects/llm-wiki-kit.md" }
+  ],
+  "facts": [
+    { "id": "zone-threshold", "home": "wiki/concepts/page-zones.md", "patterns": ["80 lines"] },
+    { "id": "home-regression", "home": "wiki/concepts/canon-map.md", "patterns": ["nine days"] },
+    { "id": "ingest-detail-cap", "home": "wiki/processes/ingest.md", "patterns": ["3 to 5 bullets"] },
+    { "id": "dropped-log-bullets", "home": "wiki/concepts/operations-log.md", "patterns": ["53 bullets"] }
+  ]
+}
