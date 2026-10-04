@@ -1,0 +1,49 @@
+#!/bin/sh
+# Pre-commit gates. Each one exists because the rule it enforces slipped when it was
+# only written down.
+#
+# 1. raw-gate   an existing raw/ file is modified or deleted. Sources are append-only.
+# 2. docs-gate  code or wiki pages staged without a wiki/log.md entry.
+# 3. wiki-lint  any wiki/ or raw/ file staged, including log.md on its own.
+# 4. md-lint    any .md staged.
+#
+# Bypasses, for a commit that truly needs one (say why in the message):
+#   RAW_OK=1  DOCS_OK=1  WIKI_LINT_OK=1
+
+staged=$(git diff --cached --name-only --diff-filter=ACMRD)
+[ -z "$staged" ] && exit 0
+fail=0
+
+raw_changed=$(git diff --cached --name-only --diff-filter=MD -- raw/)
+if [ -n "$raw_changed" ] && [ "$RAW_OK" != "1" ]; then
+  echo "raw-gate: raw/ is append-only, but these files were edited or deleted:" >&2
+  printf '%s\n' "$raw_changed" | sed 's/^/  /' >&2
+  echo "  Add a corrected source as a new file and cite both. Bypass: RAW_OK=1" >&2
+  fail=1
+fi
+
+code_staged=$(printf '%s\n' "$staged" | grep -E '^(app/src/|scripts/|\.githooks/)')
+wiki_staged=$(printf '%s\n' "$staged" | grep -E '^wiki/' | grep -v '^wiki/log\.md$')
+log_staged=$(printf '%s\n' "$staged" | grep -c '^wiki/log\.md$')
+
+if [ "$DOCS_OK" != "1" ] && [ "$log_staged" -eq 0 ] && { [ -n "$code_staged" ] || [ -n "$wiki_staged" ]; }; then
+  echo "docs-gate: changes staged without a wiki/log.md entry:" >&2
+  printf '%s\n%s\n' "$code_staged" "$wiki_staged" | grep . | sed 's/^/  /' >&2
+  echo "  Add an entry at the top of wiki/log.md naming each touched page. Bypass: DOCS_OK=1" >&2
+  fail=1
+fi
+
+# log.md alone still runs lint: its heading and kind checks matter most on the
+# code-plus-log commits the docs gate produces.
+if printf '%s\n' "$staged" | grep -qE '^(wiki|raw)/' && [ "$WIKI_LINT_OK" != "1" ]; then
+  if ! node scripts/wiki-lint.mjs; then
+    echo "wiki-lint: fix the errors above. Missing inverse edges: npm run lint:wiki -- --fix" >&2
+    fail=1
+  fi
+fi
+
+if printf '%s\n' "$staged" | grep -qE '\.md$'; then
+  npx --no-install markdownlint-cli2 || fail=1
+fi
+
+exit $fail
